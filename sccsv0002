@@ -1,0 +1,85 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.23;
+
+contract CreditosSolares {
+    string public name = "CreditosSolarestfc24";
+    string public symbol = "SOLAR";
+    uint8 public decimals = 18;
+    uint256 public totalSupply;
+
+    mapping(address => uint256) public balanceOf;
+    mapping(address => mapping(address => uint256)) public allowance;
+
+    address public owner; // Variável para armazenar o endereço do dono do contrato
+
+    event Transfer(address indexed from, address indexed to, uint256 value);
+    event Approval(address indexed owner, address indexed spender, uint256 value);
+    event Deposit(address indexed depositor, uint256 value);
+    event Withdrawal(address indexed withdrawer, uint256 value);
+    event Refund(address indexed receiver, uint256 value);
+
+    modifier onlyOwner() {
+        require(msg.sender == owner, "Somente o dono pode executar esta funcao");
+        _;
+    }
+
+    // criado por tiago ferreira cavazin 09/01/2024
+    constructor(uint256 initialSupply) {
+        totalSupply = initialSupply * 10 ** uint256(decimals);
+        balanceOf[msg.sender] = totalSupply;
+        owner = msg.sender; // O criador do contrato é definido como o dono inicial
+    }
+
+    function deposit(uint256 _amount) public onlyOwner {
+        balanceOf[owner] += _amount;
+        totalSupply += _amount;
+        emit Deposit(msg.sender, _amount);
+    }
+
+    function withdraw(uint256 _amount) public onlyOwner {
+        require(balanceOf[owner] >= _amount, "Saldo insuficiente para a retirada");
+        balanceOf[owner] -= _amount;
+        totalSupply -= _amount;
+        emit Withdrawal(msg.sender, _amount);
+    }
+
+    function refund(address _receiver, uint256 _amount) public onlyOwner {
+        require(balanceOf[owner] >= _amount, "Saldo insuficiente para o extorno");
+        balanceOf[owner] -= _amount;
+        balanceOf[_receiver] += _amount;
+        emit Refund(_receiver, _amount);
+    }
+
+    function transfer(address _to, uint256 _value) public returns (bool success) {
+        require(_to != address(0), "Endereco invalido");
+        require(balanceOf[msg.sender] >= _value, "Saldo insuficiente");
+
+        balanceOf[msg.sender] -= _value;
+        balanceOf[_to] += _value;
+
+        emit Transfer(msg.sender, _to, _value);
+        return true;
+    }
+
+    function approve(address _spender, uint256 _value) public returns (bool success) {
+        allowance[msg.sender][_spender] = _value;
+        emit Approval(msg.sender, _spender, _value);
+        return true;
+    }
+
+    function transferFrom(address _from, address _to, uint256 _value) public returns (bool success) {
+        require(_from != address(0), "Endereco invalido");
+        require(_to != address(0), "Endereco invalido");
+        require(balanceOf[_from] >= _value, "Saldo insuficiente");
+        require(_value <= allowance[_from][msg.sender], "Permissao insuficiente");
+
+        balanceOf[_from] -= _value;
+        balanceOf[_to] += _value;
+        allowance[_from][msg.sender] -= _value;
+
+        emit Transfer(_from, _to, _value);
+        return true;
+    }
+}
+
+https://goerli.etherscan.io/address/0x18a497612d022cc98d6457c960c5ec713f7ecac3#code
